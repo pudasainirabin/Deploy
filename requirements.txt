@@ -1,0 +1,4 @@
+# Add your project dependencies here
+Django
+setuptools
+pip

@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: fyp-project
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py runserver 0.0.0.0:8000
+    plan: free
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: fyp.settings
+      - key: PYTHON_VERSION
+        value: 3.9
