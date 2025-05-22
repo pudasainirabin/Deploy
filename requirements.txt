@@ -1,3 +1,3 @@
 # Add your project dependencies here
-Django
+Django>=5.2.1
 gunicorn
