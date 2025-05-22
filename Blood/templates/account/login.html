@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Blood Bank System{% endblock %}
+
+{% block content %}
+<div class="form-container ph-login">
+    <div class="row no-wrap">
+        <div class="col-12text-center">
+            
+    <h2 class="text-center mb-4">Login to the blood bank</h2>
+        </div>
+        <div class="col-12 col-md-6 position-relative">
+            <div class="ph-login__img">
+                <img src="../static/blood.jpg" alt="Login Image" class="img-fluid">
+                <div class="overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-end justify-content-start ps-4 pb-4">
+                    <h1 class="text-danger fw-bold">Blood Bank System</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="text-danger">
+                        {{ field.errors }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div class="d-grid">
+            <button type="submit" class="btn btn-danger btn-lg w-100">Login</button>
+        </div>
+    </form>
+    <div class="text-center mt-2">
+        <a href="{% url 'forgot_password' %}">Forgot Password?</a>
+    </div>
+    <div class="text-center mt-3">
+        <p>Don't have an account?</p>
+        <a href="{% url 'register_donor' %}" class="btn btn-outline-danger me-2">Register as Donor</a>
+        <a href="{% url 'register_patient' %}" class="btn btn-outline-danger">Register as Patient</a>
+    </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

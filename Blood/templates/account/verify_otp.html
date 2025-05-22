@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify OTP - Blood Bank System{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2 class="text-center mb-4">Verify OTP</h2>
+    <p class="text-center mb-4">Please enter the 6-digit OTP sent to your email address.</p>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="text-danger">
+                        {{ field.errors }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div class="d-grid">
+            <button type="submit" class="btn btn-danger">Verify OTP</button>
+        </div>
+    </form>
+</div>
+{% endblock %} 

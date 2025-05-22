@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Register as Donor - Blood Bank System{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2 class="text-center mb-4">Register as Donor</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="ph-form-input">
+                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="text-danger">
+                        {{ field.errors }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div class="d-grid">
+            <button type="submit" class="btn btn-danger">Register</button>
+        </div>
+    </form>
+    <div class="text-center mt-3">
+        <p>Already have an account? <a href="{% url 'login' %}">Login</a></p>
+    </div>
+</div>
+{% endblock %} 

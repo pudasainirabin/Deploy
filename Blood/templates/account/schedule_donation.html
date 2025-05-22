@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Schedule Donation - Blood Bank System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h3 class="mb-3"><i class="fas fa-calendar-plus text-danger"></i> Schedule Donation</h3>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_date" class="form-label">Select Donation Date</label>
+                            <div class="input-group">
+                                {{ form.date }}
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                            </div>
+                            {% if form.date.errors %}
+                                <div class="text-danger small">{{ form.date.errors.0 }}</div>
+                            {% endif %}
+                            <div class="mt-2">
+                                {% if is_eligible %}
+                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> Eligible</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Not Eligible Yet</span>
+                                    <span class="text-muted small ms-2">Eligible after {{ next_eligible_date }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_center" class="form-label">Select Donation Center</label>
+                            {{ form.center }}
+                            {% if form.center.errors %}
+                                <div class="text-danger small">{{ form.center.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_notes" class="form-label">Notes or Comments (optional)</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger small">{{ form.notes.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+                        {% endif %}
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger btn-lg" {% if not is_eligible %}disabled{% endif %}>Book Appointment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-info-circle text-danger"></i> Donation Summary</h5>
+                    <ul class="list-unstyled mb-0">
+                        <li><strong>Last Donation:</strong> {{ last_donation|default:'Never' }}</li>
+                        <li><strong>Total Donations:</strong> {{ total_donations }}</li>
+                        <li><strong>Next Eligible Date:</strong> {{ next_eligible_date }}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="fas fa-calendar-alt text-danger"></i> Upcoming Appointments</h6>
+                    {% if existing_appointments %}
+                        <ul class="list-group list-group-flush">
+                            {% for appt in existing_appointments %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-clinic-medical"></i> {{ appt.center.name }}<br>
+                                    <i class="fas fa-calendar-day"></i> {{ appt.date }}
+                                    <span class="badge bg-info text-dark ms-2">{{ appt.status }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted mb-0">No upcoming appointments.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - Blood Bank System{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-container {
+        max-height: calc(100vh - 120px); /* Adjust height to fit within the viewport */
+        overflow-y: auto; /* Enable scrolling for the dashboard content */
+        padding: 1rem; /* Add padding for better spacing */
+    }
+</style>
+
+<div class="container-fluid py-4 dashboard-container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="mb-3 text-danger text-center"><i class="fas fa-user-shield"></i> Admin Dashboard</h2>
+        </div>
+    </div>
+    <!-- User Stats Cards -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <i class="fas fa-user fa-2x text-danger mb-2"></i>
+                    <h5 class="card-title">Total Donors</h5>
+                    <p class="display-6 fw-bold">{{ total_donors }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                    <h5 class="card-title">Total Patients</h5>
+                    <p class="display-6 fw-bold">{{ total_patients }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <i class="fas fa-user-shield fa-2x text-secondary mb-2"></i>
+                    <h5 class="card-title">Total Admins</h5>
+                    <p class="display-6 fw-bold">{{ total_admins }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                    <h5 class="card-title">Pending Donations</h5>
+                    <p class="display-6 fw-bold">{{ pending_donations }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Blood Stock Overview -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-body">
+            <h4 class="mb-3 text-danger"><i class="fas fa-tint"></i> Blood Stock Overview</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Blood Type</th>
+                            <th>Units in Stock</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stock in blood_stock %}
+                        <tr>
+                            <td><span class="fw-bold">{{ stock.type }}</span></td>
+                            <td>
+                                {% if stock.units < 5 %}
+                                    <span class="badge bg-danger">{{ stock.units }}</span>
+                                {% elif stock.units < 10 %}
+                                    <span class="badge bg-warning text-dark">{{ stock.units }}</span>
+                                {% else %}
+                                    <span class="badge bg-success">{{ stock.units }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ stock.last_updated|date:'Y-m-d H:i' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if low_stock_alerts %}
+                <div class="alert alert-danger mt-3">
+                    <i class="fas fa-exclamation-triangle"></i> Low stock for: {{ low_stock_alerts|join:', ' }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <!-- Quick Actions -->
+    <h3 class="mb-4 text-center">Quick Actions</h3>
+    <div class="row mb-4 g-3 text-center justify-content-center">
+        <div class="col-md-3 mb-2">
+            <button type="button" class="btn btn-warning btn-lg w-100 rounded-pill shadow" data-bs-toggle="modal" data-bs-target="#addCenterModal">
+                <i class="fas fa-hospital me-2"></i> Add Donation Center
+            </button>
+        </div>
+        <div class="col-md-3 mb-2">
+            <button type="button" class="btn btn-danger btn-lg w-100 rounded-pill shadow" data-bs-toggle="modal" data-bs-target="#addStockModal">
+                <i class="fas fa-plus me-2"></i> Add Blood Stock
+            </button>
+        </div>
+        <div class="col-md-3 mb-2">
+            <a href="{% url 'admin_donation_blood_request' %}" class="btn btn-primary btn-lg w-100 rounded-pill shadow">
+                <i class="fas fa-list me-2"></i> View Donation Requests
+            </a>
+        </div>
+        <div class="col-md-3 mb-2">
+            <a href="{% url 'admin_users' %}" class="btn btn-secondary btn-lg w-100 rounded-pill shadow">
+                <i class="fas fa-users-cog me-2"></i> Manage Users
+            </a>
+        </div>
+        <div class="col-md-6 mt-3">
+            <a href="{% url 'generate_report_pdf' %}" class="btn btn-success btn-lg w-100 rounded-pill shadow">
+                <i class="fas fa-file-export me-2"></i> Generate Reports
+            </a>
+        </div>
+    </div>
+    <!-- Add Donation Center Modal -->
+    <div class="modal fade" id="addCenterModal" tabindex="-1" aria-labelledby="addCenterModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addCenterModalLabel">Add Donation Center</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            {% include 'account/add_donation_center_form.html' %}
+            <div id="addCenterSuccess" class="alert alert-success mt-3 d-none"></div>
+            <div id="addCenterError" class="alert alert-danger mt-3 d-none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('addDonationCenterForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const data = new FormData(form);
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: data
+                })
+                .then(response => response.json())
+                .then(json => {
+                    if (json.success) {
+                        document.getElementById('addCenterSuccess').textContent = json.message;
+                        document.getElementById('addCenterSuccess').classList.remove('d-none');
+                        document.getElementById('addCenterError').classList.add('d-none');
+                        form.reset();
+                    } else {
+                        document.getElementById('addCenterError').textContent = json.message || 'Error adding center.';
+                        document.getElementById('addCenterError').classList.remove('d-none');
+                        document.getElementById('addCenterSuccess').classList.add('d-none');
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('addCenterError').textContent = 'Error adding center.';
+                    document.getElementById('addCenterError').classList.remove('d-none');
+                    document.getElementById('addCenterSuccess').classList.add('d-none');
+                });
+            });
+        }
+    });
+    </script>
+    <!-- Add Blood Stock Modal -->
+    <div class="modal fade" id="addStockModal" tabindex="-1" aria-labelledby="addStockModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addStockModalLabel">Add Blood Stock</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addBloodStockForm" method="post" action="{% url 'add_blood_stock' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="stock_type" class="form-label">Blood Type</label>
+                    <select name="type" id="stock_type" class="form-select" required>
+                        {% for group in blood_stock|dictsort:'type' %}
+                            <option value="{{ group.type }}">{{ group.type }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="stock_units" class="form-label">Units to Add</label>
+                    <input type="number" name="units" id="stock_units" class="form-control" min="1" value="1" required>
+                </div>
+                <button type="submit" class="btn btn-danger w-100">Add Stock</button>
+            </form>
+            <div id="addStockSuccess" class="alert alert-success mt-3 d-none"></div>
+            <div id="addStockError" class="alert alert-danger mt-3 d-none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('addBloodStockForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const data = new FormData(form);
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: data
+                })
+                .then(response => response.json())
+                .then(json => {
+                    if (json.success) {
+                        document.getElementById('addStockSuccess').textContent = json.message;
+                        document.getElementById('addStockSuccess').classList.remove('d-none');
+                        document.getElementById('addStockError').classList.add('d-none');
+                        form.reset();
+                    } else {
+                        document.getElementById('addStockError').textContent = json.message || 'Error adding stock.';
+                        document.getElementById('addStockError').classList.remove('d-none');
+                        document.getElementById('addStockSuccess').classList.add('d-none');
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('addStockError').textContent = 'Error adding stock.';
+                    document.getElementById('addStockError').classList.remove('d-none');
+                    document.getElementById('addStockSuccess').classList.add('d-none');
+                });
+            });
+        }
+    });
+    </script>
+    <!-- (Optional) Add charts/graphs here -->
+</div>
+{% endblock %}

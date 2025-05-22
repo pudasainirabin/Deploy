@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Request Blood - Blood Bank System{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4 text-danger"><i class="fas fa-tint"></i> Request Blood</h2>
+    <form method="post" enctype="multipart/form-data" id="bloodRequestForm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="id_blood_group" class="form-label">Blood Group</label>
+            {{ form.blood_group }}
+            {% if form.blood_group.errors %}<div class="text-danger small">{{ form.blood_group.errors }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_quantity" class="form-label">Quantity (units)</label>
+            {{ form.quantity }}
+            {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_notes" class="form-label">Reason for Request</label>
+            {{ form.notes }}
+            {% if form.notes.errors %}<div class="text-danger small">{{ form.notes.errors }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_preferred_center" class="form-label">Preferred Hospital/Center</label>
+            {{ form.preferred_center }}
+            {% if form.preferred_center.errors %}<div class="text-danger small">{{ form.preferred_center.errors }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_prescription" class="form-label">Upload Prescription (optional)</label>
+            {{ form.prescription }}
+            {% if form.prescription.errors %}<div class="text-danger small">{{ form.prescription.errors }}</div>{% endif %}
+        </div>
+        <button type="submit" class="btn btn-danger btn-lg w-100" onclick="return confirm('Are you sure you want to submit this blood request?');">
+            <i class="fas fa-paper-plane"></i> Submit Request
+        </button>
+    </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,12 @@
+<form id="addDonationCenterForm" method="post" action="{% url 'add_donation_center' %}">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="id_name" class="form-label">Center Name</label>
+        <input type="text" name="name" id="id_name" class="form-control" placeholder="Center Name" required>
+    </div>
+    <div class="mb-3">
+        <label for="id_address" class="form-label">Address</label>
+        <textarea name="address" id="id_address" class="form-control" placeholder="Address" rows="3" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Add Center</button>
+</form> 

@@ -1,0 +1,32 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.home, name='home'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('register/donor/', views.register_donor, name='register_donor'),
+    path('register/patient/', views.register_patient, name='register_patient'),
+    path('verify-otp/<int:user_id>/', views.verify_otp, name='verify_otp'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('schedule-donation/', views.schedule_donation, name='schedule_donation'),
+    path('donation-history/', views.donation_history, name='donation_history'),
+    path('notifications/', views.notifications, name='notifications'),
+    path('profile-settings/', views.profile_settings, name='profile_settings'),
+    path('admin-login/', views.admin_login, name='admin_login'),
+    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin-users/', views.admin_users, name='admin_users'),
+    path('admin-user/<int:user_id>/', views.admin_user_detail, name='admin_user_detail'),
+    path('admin-donation-blood-request/', views.admin_donation_blood_request, name='admin_donation_blood_request'),
+    path('add-donation-center/', views.add_donation_center, name='add_donation_center'),
+    path('approve-donation/<int:pk>/', views.approve_donation, name='approve_donation'),
+    path('reject-donation/<int:pk>/', views.reject_donation, name='reject_donation'),
+    path('approve-blood-request/<int:pk>/', views.approve_blood_request, name='approve_blood_request'),
+    path('reject-blood-request/<int:pk>/', views.reject_blood_request, name='reject_blood_request'),
+    path('add-blood-stock/', views.add_blood_stock, name='add_blood_stock'),
+    path('generate_report_pdf/', views.generate_report_pdf, name='generate_report_pdf'),
+    path('request-blood/', views.request_blood, name='request_blood'),
+    path('blood-request-history/', views.blood_request_history, name='blood_request_history'),
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
+    path('reset-password/<int:user_id>/', views.reset_password, name='reset_password'),
+]

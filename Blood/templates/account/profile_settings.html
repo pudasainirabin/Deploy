@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile & Settings - Blood Bank System{% endblock %}
+
+{% block content %}
+<style>
+    .profile-settings-container {
+        max-height: calc(100vh - 120px); /* Adjust height to fit within the viewport */
+        overflow-y: auto; /* Enable scrolling for the profile content */
+        padding: 1rem; /* Add padding for better spacing */
+    }
+</style>
+
+<div class="container-fluid py-4 profile-settings-container">
+    <h2 class="mb-4"><i class="fas fa-user-cog text-danger"></i> Profile & Settings</h2>
+    {% if success_message %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ success_message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+    {% if error_message %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ error_message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+    <ul class="nav nav-tabs mb-4" id="profileTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
+                <i class="fas fa-user me-2"></i>Profile
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab">
+                <i class="fas fa-lock me-2"></i>Change Password
+            </button>
+        </li>
+    </ul>
+    <div class="tab-content" id="profileTabContent">
+        <!-- Profile Tab -->
+        <div class="tab-pane fade show active" id="profile" role="tabpanel">
+            <form method="post" enctype="multipart/form-data" class="needs-validation ph-form" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="update_profile" value="1">
+                <div class="row g-4 ">
+                    <div class="col-md-3 text-center">
+                        <div class="profile-picture-container position-relative mb-3">
+                            {% if user.profile_picture %}
+                                <img src="{{ user.profile_picture.url }}" class="profile-picture rounded-circle shadow-sm" alt="Profile Picture" style="width: 150px; height: 150px; object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-user-circle fa-6x text-secondary"></i>
+                            {% endif %}
+                            <label for="id_profile_picture" class="position-absolute bottom-0 end-0 bg-danger text-white rounded-circle p-2 cursor-pointer" style="cursor: pointer;">
+                                <i class="fas fa-camera"></i>
+                            </label>
+                            <input type="file" name="profile_picture" id="id_profile_picture" style="display: none;">
+                        </div>
+                        <small class="text-muted d-block" id="profilePicHelp">Click the camera icon to update your profile picture</small>
+                        <div class="text-danger small" id="profilePicError" style="display:none;"></div>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="row g-3">
+                            <div class="ph-form-input">
+                                <label class="form-label">Full Name</label>
+                                <div class="ph-form-half">
+                                    {{ form.first_name }}
+                                    {{ form.last_name }}
+                                </div>
+                                <div class="invalid-feedback">Please enter your full name.</div>
+                            </div>
+                            <div class="ph-form-input">
+                                <label class="form-label">Email <span class="badge bg-success">Verified</span></label>
+                                <input type="email" class="form-control" value="{{ user_profile.user.email|default:user.email }}" readonly>
+                                <div class="form-text">Your email cannot be changed</div>
+                            </div>
+                            <div class="ph-form-input">
+                                <label class="form-label">Phone Number</label>
+                                {{ form.phone_number }}
+                                <div class="invalid-feedback">Please enter a valid phone number.</div>
+                            </div>
+                            <div class="ph-form-input">
+                                <label class="form-label">Date of Birth</label>
+                                {% if form.date_of_birth.field.disabled %}
+                                    <input type="date" class="form-control" value="{{ form.date_of_birth.value|default:user.date_of_birth|date:'Y-m-d' }}" readonly>
+                                {% else %}
+                                    {{ form.date_of_birth }}
+                                {% endif %}
+                                <div class="invalid-feedback">Please enter your date of birth.</div>
+                            </div>
+                            <div class="ph-form-input">
+                                <label class="form-label">Address</label>
+                                {{ form.address }}
+                                <div class="invalid-feedback">Please enter your address.</div>
+                            </div>
+                            <div class="ph-form-input">
+                                <label class="form-label">Blood Group</label>
+                                {{ form.blood_group }}
+                                {% if form.fields.blood_group.disabled %}
+                                    <div class="form-text text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>Blood group is permanent once set and cannot be changed.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-danger" id="saveProfileBtn">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <!-- Change Password Tab -->
+        <div class="tab-pane fade" id="password" role="tabpanel">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="change_password" value="1">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Old Password</label>
+                        {{ password_form.old_password }}
+                        <div class="invalid-feedback">Please enter your current password.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">New Password</label>
+                        {{ password_form.new_password1 }}
+                        <div class="password-strength mt-2"></div>
+                        <div class="invalid-feedback">Please enter a valid new password.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Confirm New Password</label>
+                        {{ password_form.new_password2 }}
+                        <div class="invalid-feedback">Passwords do not match.</div>
+                    </div>
+                </div>
+                {% if otp_required %}
+                <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                        <label class="form-label">OTP</label>
+                        {{ password_form.otp }}
+                        <div class="invalid-feedback">Please enter the OTP sent to your email.</div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" id="changePasswordBtn">
+                        <i class="fas fa-key me-2"></i>Change Password
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const saveProfileBtn = document.querySelector('#saveProfileBtn');
+    const profileForm = document.querySelector('.needs-validation');
+
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(event) {
+            if (!profileForm.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            profileForm.classList.add('was-validated');
+        });
+    }
+
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', function() {
+            this.querySelector('.spinner-border').classList.remove('d-none');
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

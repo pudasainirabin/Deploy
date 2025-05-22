@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block title %}Donor Profile - Blood Bank System{% endblock %}
+
+{% block content %}
+{% if donor %}
+  <!-- Donor dashboard content here -->
+  <h2>Welcome, {{ donor.get_full_name }}</h2>
+  <p>Your blood group: {{ blood_group|default:'Not Set' }}</p>
+  <!-- More donor-specific info -->
+{% elif patient %}
+  <!-- Patient dashboard content here -->
+  <div class="container py-4">
+    <h2>Welcome, {{ patient.get_full_name }}</h2>
+    <div class="row mb-4 g-3">
+      <div class="col-md-3">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-clipboard-list fa-2x text-danger mb-2"></i>
+            <h5 class="card-title">Total Requests</h5>
+            <p class="display-6 fw-bold">{{ total_requests }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+            <h5 class="card-title">Approved Requests</h5>
+            <p class="display-6 fw-bold">{{ approved_requests }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-times-circle fa-2x text-danger mb-2"></i>
+            <h5 class="card-title">Rejected Requests</h5>
+            <p class="display-6 fw-bold">{{ rejected_requests }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-tint fa-2x text-primary mb-2"></i>
+            <h5 class="card-title">Blood Group</h5>
+            <p class="display-6 fw-bold">{{ blood_group|default:'Not Set' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row mb-4 g-3">
+      <div class="col-md-4">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-calendar-check fa-2x text-info mb-2"></i>
+            <h5 class="card-title">Next Appointment</h5>
+            {% if next_appointment %}
+              <p class="mb-1"><strong>{{ next_appointment.request_date }}</strong></p>
+              <p class="mb-1">{{ next_appointment.preferred_center }}</p>
+              <span class="badge bg-success">Approved</span>
+            {% else %}
+              <p class="text-muted">No approved appointment yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-info-circle fa-2x text-secondary mb-2"></i>
+            <h5 class="card-title">Latest Request Status</h5>
+            {% if latest_request %}
+              <p class="mb-1"><strong>{{ latest_request.status|title }}</strong></p>
+              <p class="mb-1">{{ latest_request.request_date }} - {{ latest_request.blood_group }} ({{ latest_request.quantity }} units)</p>
+            {% else %}
+              <p class="text-muted">No requests yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <i class="fas fa-heart fa-2x text-danger mb-2"></i>
+            <h5 class="card-title">Lives Saved</h5>
+            <p class="display-6 fw-bold text-success">{{ lives_saved }}</p>
+            <p class="text-muted">Estimated lives saved</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row mb-4 g-3 text-center">
+      <div class="col-md-6">
+        <a href="{% url 'request_blood' %}" class="btn btn-danger btn-lg w-100"><i class="fas fa-tint"></i> Request Blood</a>
+      </div>
+      <div class="col-md-6">
+        <a href="{% url 'blood_request_history' %}" class="btn btn-outline-primary btn-lg w-100"><i class="fas fa-history"></i> Blood Request History</a>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+{% if donor %}
+<div class="container py-4">
+    <!-- Donor Overview Card -->
+    <div class="card mb-4 shadow-sm">
+        <div class="row g-0 align-items-center">
+            <div class="col-md-2 text-center p-3">
+                {% if donor.profile_picture %}
+                    <img src="{{ donor.profile_picture.url }}" class="profile-picture mb-2" alt="Profile Picture">
+                {% else %}
+                    <i class="fas fa-user-circle fa-6x text-secondary mb-2"></i>
+                {% endif %}
+            </div>
+            <div class="col-md-7">
+                <div class="card-body">
+                    <h3 class="card-title mb-1">Welcome, {{ donor.get_full_name|default:donor.username }}</h3>
+                    <p class="mb-1"><span class="badge bg-danger fs-6"><i class="fas fa-tint"></i> {{ blood_group|default:'N/A' }}</span></p>
+                    <p class="mb-1"><i class="fas fa-hand-holding-medical"></i> <strong>Total Donations:</strong> {{ total_donations }}</p>
+                    <p class="mb-1"><i class="fas fa-calendar-check"></i> <strong>Last Donation:</strong> {{ last_donation|default:'Never' }}</p>
+                    <p class="mb-1">
+                        {% if is_eligible %}
+                            <span class="badge bg-success"><i class="fas fa-check-circle"></i> Eligible to donate now!</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Next eligible: {{ next_eligible_date }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-3 text-end p-3">
+                <a href="{% url 'profile_settings' %}" class="btn btn-outline-secondary mb-2"><i class="fas fa-pen"></i> Edit Profile</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Buttons -->
+    <div class="row mb-4 g-3 text-center">
+        <div class="col-md-4">
+            <a href="{% url 'schedule_donation' %}" class="btn btn-danger btn-lg w-100"><i class="fas fa-calendar-plus"></i> Schedule Donation</a>
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-primary btn-lg w-100" data-bs-toggle="modal" data-bs-target="#eligibilityModal"><i class="fas fa-search"></i> Check Eligibility</button>
+        </div>
+        <div class="col-md-4">
+            <a href="{% url 'donation_history' %}" class="btn btn-outline-danger btn-lg w-100"><i class="fas fa-history"></i> Donation History</a>
+        </div>
+    </div>
+
+    <!-- Status Cards/Widgets -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-history fa-2x text-danger mb-2"></i>
+                    <h5 class="card-title">Donation History</h5>
+                    <p class="card-text">Total: <strong>{{ total_donations }}</strong></p>
+                    {% if recent_donations %}
+                        <ul class="list-unstyled small">
+                            {% for donation in recent_donations %}
+                                <li>{{ donation.date }} - {{ donation.status }}</li>
+                            {% endfor %}
+                        </ul>
+                        <a href="{% url 'donation_history' %}" class="btn btn-link">View All</a>
+                    {% else %}
+                        <p class="text-muted">No donations yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-heart fa-2x text-danger mb-2"></i>
+                    <h5 class="card-title">Lives Saved</h5>
+                    <p class="display-6 fw-bold text-success">{{ lives_saved }}</p>
+                    <p class="text-muted">Estimated lives saved</p>
+                    {% if total_donations >= 5 %}
+                        <span class="badge bg-secondary">Silver Donor</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-calendar-alt fa-2x text-danger mb-2"></i>
+                    <h5 class="card-title">Upcoming Appointment</h5>
+                    {% if upcoming_appointment %}
+                        <p><strong>{{ upcoming_appointment.date }}</strong> at <strong>{{ upcoming_appointment.time }}</strong></p>
+                        <p>{{ upcoming_appointment.location }}</p>
+                        <span class="badge bg-info text-dark">{{ upcoming_appointment.status }}</span>
+                    {% else %}
+                        <p class="text-muted">No upcoming appointments</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Banner -->
+    {% if not is_eligible %}
+        <div class="alert alert-warning text-center">
+            <i class="fas fa-info-circle"></i> You will be eligible to donate again after <strong>{{ next_eligible_date }}</strong>.
+        </div>
+    {% endif %}
+    {% if upcoming_appointment and upcoming_appointment.is_soon %}
+        <div class="alert alert-info text-center">
+            <i class="fas fa-bell"></i> You have an appointment coming up soon!
+        </div>
+    {% endif %}
+</div>
+
+<!-- Eligibility Modal -->
+<div class="modal fade" id="eligibilityModal" tabindex="-1" aria-labelledby="eligibilityModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="eligibilityModalLabel">Donation Eligibility</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {% if is_eligible %}
+            <div class="alert alert-success"><i class="fas fa-check-circle"></i> You are eligible to donate blood now!</div>
+        {% else %}
+            <div class="alert alert-warning"><i class="fas fa-clock"></i> You will be eligible to donate again after <strong>{{ next_eligible_date }}</strong>.</div>
+        {% endif %}
+        <ul>
+            <li>Minimum 3 months since last donation</li>
+            <li>Good health and age 18-65</li>
+            <li>No recent infections or major illnesses</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %} 
