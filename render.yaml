@@ -1,8 +1,12 @@
 services:
   - type: web
     name: fyp-project
-    env: docker
-    dockerfilePath: ./Dockerfile
+    env: python
+    buildCommand: |
+      python -m venv env
+      source env/bin/activate
+      pip install -r requirements.txt
+    startCommand: gunicorn Blood.Backend.wsgi:application --bind 0.0.0.0:8000
     plan: free
     envVars:
       - key: DJANGO_SETTINGS_MODULE
