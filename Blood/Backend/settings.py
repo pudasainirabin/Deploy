@@ -27,6 +27,10 @@ DEBUG = False  # Disable debug mode for production
 
 ALLOWED_HOSTS = ['*']  # Replace '*' with your Render domain for better security
 
+# Static files configuration for production
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 # Application definition
 
