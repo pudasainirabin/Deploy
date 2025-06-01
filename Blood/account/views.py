@@ -387,6 +387,38 @@ def admin_dashboard(request):
     return render(request, 'account/admin_dashboard.html', context)
 
 @login_required
+def admin_dashboard_updates(request):
+    if request.user.role != 'ADMIN':
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    # Blood stock overview
+    blood_types = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+    blood_stock = []
+    low_stock_alerts = []
+    for btype in blood_types:
+        stock = BloodStock.objects.filter(type=btype).first()
+        units = stock.units if stock else 0
+        last_updated = stock.last_updated.strftime('%Y-%m-%d %H:%M:%S') if stock else 'N/A'
+        blood_stock.append({'type': btype, 'units': units, 'last_updated': last_updated})
+        if units < 5:
+            low_stock_alerts.append(btype)
+
+    # User stats
+    total_donors = User.objects.filter(role='DONOR').count()
+    total_patients = User.objects.filter(role='PATIENT').count()
+    total_admins = User.objects.filter(role='ADMIN').count()
+    pending_donations = DonationAppointment.objects.filter(status='PENDING').count()
+
+    return JsonResponse({
+        'total_donors': total_donors,
+        'total_patients': total_patients,
+        'total_admins': total_admins,
+        'pending_donations': pending_donations,
+        'blood_stock': blood_stock,
+        'low_stock_alerts': low_stock_alerts,
+    })
+
+@login_required
 def admin_users(request):
     if request.user.role != 'ADMIN':
         return redirect('admin_login')
@@ -454,6 +486,9 @@ def admin_user_detail(request, user_id):
             user_obj.is_active = False
             user_obj.save()
         elif action == 'delete':
+            if user_obj.role == 'ADMIN':
+                messages.error(request, 'You cannot delete an admin user.')
+                return redirect('admin_users')
             user_obj.delete()
             return redirect('admin_users')
         # Add more actions as needed
@@ -528,56 +563,25 @@ def approve_donation(request, pk):
     appt = DonationAppointment.objects.get(pk=pk)
     appt.status = 'CONFIRMED'
     appt.save()
+
     # Update blood stock
     blood_group = appt.donor.userprofile.blood_group if hasattr(appt.donor, 'userprofile') else None
+    donated_units = 20  # Fixed 20 units added for each donation
+
     if blood_group:
         stock, created = BloodStock.objects.get_or_create(type=blood_group)
-        stock.units += 1  # Minimum donation amount
-        stock.save()
+        stock.units += donated_units  # Add the donated units to the stock
+        stock.last_updated = timezone.now()  # Ensure correct time is set
+        stock.save(update_fields=['last_updated', 'units'])  # Save only specific fields
+
     Notification.objects.create(
         user=appt.donor,
         title='Donation Approved',
-        message=f'Your donation scheduled for {appt.date} at {appt.center.name} has been approved.',
+        message=f'Your donation scheduled for {appt.date} at {appt.center.name} has been approved. {donated_units} units of {blood_group} blood have been added to the inventory.',
         type='donation'
     )
 
-    # --- Generate Certificate PDF ---
-    buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
-    p.setFont("Helvetica-Bold", 20)
-    p.drawCentredString(width/2, height-100, "Certificate of Appreciation")
-    p.setFont("Helvetica", 14)
-    p.drawCentredString(width/2, height-150, f"This is to certify that")
-    p.setFont("Helvetica-Bold", 16)
-    p.drawCentredString(width/2, height-180, f"{appt.donor.get_full_name()}")
-    p.setFont("Helvetica", 14)
-    p.drawCentredString(width/2, height-210, f"donated blood on {appt.date} at {appt.center.name}.")
-    p.drawCentredString(width/2, height-240, "Thank you for your valuable contribution!")
-    p.setFont("Helvetica-Oblique", 12)
-    p.drawCentredString(width/2, height-270, "Blood Bank Management System")
-    p.showPage()
-    p.save()
-    buffer.seek(0)
-    pdf_data = buffer.getvalue()
-
-    # --- Send Email with Certificate ---
-    subject = "Your Blood Donation Certificate"
-    message = (
-        f"Dear {appt.donor.get_full_name()},\n\n"
-        f"Thank you for your blood donation on {appt.date} at {appt.center.name}.\n"
-        f"Please find your certificate of appreciation attached.\n\n"
-        f"Best regards,\nBlood Bank Team"
-    )
-    email = EmailMessage(
-        subject,
-        message,
-        settings.EMAIL_HOST_USER,
-        [appt.donor.email],
-    )
-    email.attach('Donation_Certificate.pdf', pdf_data, 'application/pdf')
-    email.send(fail_silently=True)
-
+    messages.success(request, f"Donation approved. {donated_units} units of {blood_group} blood have been added to the inventory.")
     return redirect('admin_donation_blood_request')
 
 @login_required
@@ -654,11 +658,13 @@ def add_blood_stock(request):
         return redirect('admin_login')
     if request.method == 'POST':
         blood_type = request.POST.get('type')
-        units = int(request.POST.get('units', 1))
+        units = int(request.POST.get('units', 20))
         from .models import BloodStock
         stock, created = BloodStock.objects.get_or_create(type=blood_type)
-        stock.units += units
-        stock.save()
+        stock.units += units  # Add the specified units to the stock
+        stock.last_updated = timezone.now()  # Ensure correct time is set
+        stock.save(update_fields=['last_updated', 'units'])  # Save only specific fields
+
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'success': True, 'message': f'{units} units added to {blood_type} stock.'})
         messages.success(request, f'{units} units added to {blood_type} stock.')
@@ -789,3 +795,64 @@ def reset_password(request, user_id):
     else:
         form = ResetPasswordForm()
     return render(request, 'account/reset_password.html', {'form': form, 'user': user})
+
+@login_required
+def approve_donation(request, pk):
+    if request.user.role != 'ADMIN':
+        return redirect('admin_login')
+    from .models import DonationAppointment, Notification, BloodStock
+    appt = DonationAppointment.objects.get(pk=pk)
+    appt.status = 'CONFIRMED'
+    appt.save()
+    # Update blood stock
+    blood_group = appt.donor.userprofile.blood_group if hasattr(appt.donor, 'userprofile') else None
+    if blood_group:
+        stock, created = BloodStock.objects.get_or_create(type=blood_group)
+        stock.units += 1  # Minimum donation amount
+        stock.save()
+    Notification.objects.create(
+        user=appt.donor,
+        title='Donation Approved',
+        message=f'Your donation scheduled for {appt.date} at {appt.center.name} has been approved.',
+        type='donation'
+    )
+
+    # --- Generate Certificate PDF ---
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    p.setFont("Helvetica-Bold", 20)
+    p.drawCentredString(width/2, height-100, "Certificate of Appreciation")
+    p.setFont("Helvetica", 14)
+    p.drawCentredString(width/2, height-150, f"This is to certify that")
+    p.setFont("Helvetica-Bold", 16)
+    p.drawCentredString(width/2, height-180, f"{appt.donor.get_full_name()}")
+    p.setFont("Helvetica", 14)
+    p.drawCentredString(width/2, height-210, f"donated blood on {appt.date} at {appt.center.name}.")
+    p.drawCentredString(width/2, height-240, "Thank you for your valuable contribution!")
+    p.setFont("Helvetica-Oblique", 12)
+    p.drawCentredString(width/2, height-270, "Blood Bank Management System")
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+    pdf_data = buffer.getvalue()
+
+    # --- Send Email with Certificate ---
+    subject = "Your Blood Donation Certificate"
+    message = (
+        f"Dear {appt.donor.get_full_name()},\n\n"
+        f"Thank you for your blood donation on {appt.date} at {appt.center.name}.\n"
+        f"Please find your certificate of appreciation attached.\n\n"
+        f"Best regards,\nBlood Bank Team"
+    )
+    email = EmailMessage(
+        subject,
+        message,
+        settings.EMAIL_HOST_USER,
+        [appt.donor.email],
+    )
+    email.attach('Donation_Certificate.pdf', pdf_data, 'application/pdf')
+    email.send(fail_silently=True)
+
+    return redirect('admin_donation_blood_request')
+
